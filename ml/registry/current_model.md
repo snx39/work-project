@@ -5,7 +5,7 @@
 - MLflow run_id：`7f677c570f0247b2bd4694280ed202eb`
 - Dataset used：`data/v2_house.csv`（清洗 + 扩充）
 - DVC dataset pointer：`data/v2_house.csv.dvc`（md5 `81694c0110f38e52c9cd2c04ce4896c4`）
-- Git commit hash：`1e7cbf7e963644e027e471af511aef3c38238ec1`
+- Git commit hash：`fef9108d5816b0ce68eb5c67a56927879c7e2256`
 
 ## 输入特征契约（对组员B 重要）
 模型 `ml/model.pkl` 的输入特征为 **两个字段**：
