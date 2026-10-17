@@ -1,14 +1,19 @@
-# DVC cache
-.dvc/cache
-
-# MLflow artifacts
-mlruns/
-*.pkl
-
-# python venv
+# Python虚拟环境
 .venv/
+
+# Python缓存
 __pycache__/
 *.pyc
+*.pyo
 
-# raw dataset
+# DVC本地缓存
+.dvc/cache
+
+# MLflow实验记录
+mlruns/
+
+# 模型工件（不提交git）
+*.pkl
+
+# 原始数据集csv（DVC管理，不进git）
 data/*.csv
