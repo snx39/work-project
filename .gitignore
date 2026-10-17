@@ -1,0 +1,14 @@
+# DVC cache
+.dvc/cache
+
+# MLflow artifacts
+mlruns/
+*.pkl
+
+# python venv
+.venv/
+__pycache__/
+*.pyc
+
+# raw dataset
+data/*.csv
