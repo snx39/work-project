@@ -13,8 +13,9 @@ __pycache__/
 mlruns/
 mlflow.db
 
-# 模型工件（不提交git）
+# 模型工件（ml/model.pkl 为后端推理交付物，需进git供B使用）
 *.pkl
+!ml/model.pkl
 
 # 原始数据集csv（DVC管理，不进git）
 data/*.csv
