@@ -11,6 +11,7 @@ __pycache__/
 
 # MLflow实验记录
 mlruns/
+mlflow.db
 
 # 模型工件（不提交git）
 *.pkl

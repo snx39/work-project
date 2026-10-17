@@ -1,45 +1,53 @@
 # ml/train.py
+# 组员A：训练房价回归模型 + MLflow 记录，固定保存 ml/model.pkl
+# 用法：
+#   python ml/train.py --dataset data/v1_house.csv --model-type linear          # baseline
+#   python ml/train.py --dataset data/v2_house.csv --model-type rf --n-estimators 200  # improved
+import argparse
+import os
+import pickle
+import subprocess
+
 import mlflow
 import mlflow.sklearn
+import numpy as np
 import pandas as pd
-import pickle
-import argparse
-import subprocess
-import os
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.model_selection import train_test_split
+
+# 模型输入特征 —— 必须与组员B的 app/schemas.py 字段完全一致！
+FEATURES = ["area", "bedrooms"]
+TARGET = "price"
+MODEL_PATH = "ml/model.pkl"
 
 
 def get_git_commit_hash() -> str:
-    """获取当前git commit SHA，记录进mlflow参数"""
+    """获取当前 git commit SHA，记录进 mlflow 参数"""
     try:
-        return subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip()
+        return subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("ascii").strip()
     except Exception:
         return "unknown_git_hash"
 
 
-def main(dataset_path: str, model_save_path: str, model_type: str):
+def main(dataset_path: str, model_save_path: str, model_type: str,
+         n_estimators: int = 200, max_depth: int = None) -> None:
     # 读取数据集
     df = pd.read_csv(dataset_path)
-    X = df[["area", "bedrooms"]]
-    y = df["price"]
+    X = df[FEATURES]
+    y = df[TARGET]
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
-
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     git_sha = get_git_commit_hash()
 
-    # 设置MLflow实验名称
     mlflow.set_experiment("house_price_prediction")
-
     with mlflow.start_run():
-        # ---------- 记录参数 log_param ----------
+        # ---------- log_param ----------
         mlflow.log_param("git_commit_sha", git_sha)
         mlflow.log_param("dataset_path", dataset_path)
         mlflow.log_param("model_type", model_type)
+        mlflow.log_param("features", FEATURES)
         mlflow.log_param("test_size", 0.2)
         mlflow.log_param("random_state", 42)
 
@@ -47,46 +55,59 @@ def main(dataset_path: str, model_save_path: str, model_type: str):
         if model_type == "linear":
             model = LinearRegression()
         elif model_type == "rf":
-            model = RandomForestRegressor(n_estimators=50, random_state=42)
-            mlflow.log_param("n_estimators", 50)
+            model = RandomForestRegressor(
+                n_estimators=n_estimators, max_depth=max_depth, random_state=42)
+            mlflow.log_param("n_estimators", n_estimators)
+            mlflow.log_param("max_depth", max_depth)
         else:
             raise ValueError("model_type only support linear / rf")
 
-        # 训练
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
-        # ---------- 计算指标 log_metric ----------
+        # ---------- log_metric ----------
         mse = mean_squared_error(y_test, y_pred)
+        rmse = float(np.sqrt(mse))
         r2 = r2_score(y_test, y_pred)
         mlflow.log_metric("mse", mse)
+        mlflow.log_metric("rmse", rmse)
         mlflow.log_metric("r2_score", r2)
 
-        # ---------- 保存本地模型文件（给组员B后端使用） ----------
+        # ---------- 保存模型（给组员B后端使用） ----------
         os.makedirs(os.path.dirname(model_save_path), exist_ok=True)
         with open(model_save_path, "wb") as f:
             pickle.dump(model, f)
 
-        # ---------- MLflow记录artifact ----------
+        # ---------- log_artifact ----------
         mlflow.log_artifact(model_save_path)
+        # 新版 mlflow 用 skops 序列化，RF/决策树内部类型默认不被信任，
+        # 显式声明 trusted 类型以避免 UntrustedTypesFoundException
+        mlflow.sklearn.log_model(
+            model, "sklearn_model",
+            skops_trusted_types=["sklearn.tree._tree.Tree"])
 
-        print("="*50)
+        run_id = mlflow.active_run().info.run_id
+        print("=" * 50)
         print(f"Dataset: {dataset_path}")
         print(f"Model: {model_type}")
-        print(f"MSE = {mse:.2f}")
-        print(f"R2 score = {r2:.4f}")
+        print(f"MSE = {mse:.2f} | RMSE = {rmse:.2f} | R2 = {r2:.4f}")
         print(f"Model saved -> {model_save_path}")
-        print("="*50)
+        print(f"MLflow run_id: {run_id}")
+        print("=" * 50)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", type=str, required=True, help="csv数据集路径")
     parser.add_argument("--model-type", default="linear", help="linear / rf")
+    parser.add_argument("--n-estimators", type=int, default=200, help="RF 树数量")
+    parser.add_argument("--max-depth", type=int, default=None, help="RF 最大深度")
     args = parser.parse_args()
 
     main(
         dataset_path=args.dataset,
-        model_save_path="ml/model.pkl",
-        model_type=args.model_type
+        model_save_path=MODEL_PATH,
+        model_type=args.model_type,
+        n_estimators=args.n_estimators,
+        max_depth=args.max_depth,
     )
