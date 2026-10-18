@@ -6,9 +6,9 @@ client = TestClient(app)
 
 
 @pytest.mark.parametrize("payload", [
-    {"area": 100.0, "bedrooms": 2},
-    {"area": 50.0, "bedrooms": 1},
-    {"area": 200.0, "bedrooms": 4},
+    {"area": 100.0, "bedrooms": 3, "bathrooms": 2, "year_built": 2010},
+    {"area": 0.1, "bedrooms": 1, "bathrooms": 1, "year_built": 1900},
+    {"area": 1000.0, "bedrooms": 10, "bathrooms": 8, "year_built": 2024},
 ])
 def test_predict_valid(payload):
     response = client.post("/predict", json=payload)
@@ -17,18 +17,11 @@ def test_predict_valid(payload):
 
 
 @pytest.mark.parametrize("payload", [
-    {"area": 0.1, "bedrooms": 1},
-    {"area": 1000.0, "bedrooms": 10},
-])
-def test_predict_boundary(payload):
-    response = client.post("/predict", json=payload)
-    assert response.status_code == 200
-
-
-@pytest.mark.parametrize("payload", [
-    {"area": 100.0},  # 缺 bedrooms
-    {"bedrooms": 2},  # 缺 area
-    {},               # 全缺
+    {"bedrooms": 3, "bathrooms": 2, "year_built": 2010},
+    {"area": 100.0, "bathrooms": 2, "year_built": 2010},
+    {"area": 100.0, "bedrooms": 3, "year_built": 2010},
+    {"area": 100.0, "bedrooms": 3, "bathrooms": 2},
+    {},
 ])
 def test_predict_missing_field(payload):
     response = client.post("/predict", json=payload)
