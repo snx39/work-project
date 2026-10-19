@@ -27,12 +27,12 @@ MODEL_PATH = "ml/model.pkl"
 def get_git_commit_hash() -> str:
     try:
         return subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("ascii").strip()
-    except Exception:
+    except (subprocess.CalledProcessError, FileNotFoundError, UnicodeDecodeError):
         return "unknown_git_hash"
 
 
 def main(dataset_path: str, model_save_path: str, model_type: str,
-         n_estimators: int = 200, max_depth: int = None) -> None:
+         n_estimators: int = 200, max_depth: int | None = None) -> None:
     df = pd.read_csv(dataset_path)
     X = df[FEATURES]
     y = df[TARGET]
