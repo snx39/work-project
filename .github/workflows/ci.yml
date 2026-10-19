@@ -1,8 +1,13 @@
 name: CI/CD Pipeline
 
 on:
+  # 1. 门禁：任何人提 PR，只做检查，不部署
   pull_request:
-    branches: [dev,staging, main]
+    branches: [dev, staging, main]
+  
+  # 2. 部署：代码合并（push）到这两个分支后，才触发构建镜像
+  push:
+    branches: [staging, main]
 
 jobs:
   build-and-test:

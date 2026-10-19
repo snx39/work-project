@@ -1,0 +1,5 @@
+outs:
+- md5: 23eb87254c1068a88c7f952566edb154
+  size: 10589
+  hash: md5
+  path: v3_house.csv
