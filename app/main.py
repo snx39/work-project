@@ -1,7 +1,9 @@
-from fastapi import FastAPI,HTTPException
-from .schemas import HouseFeature,HousePredictResponse
-import pickle
 import os
+import pickle
+
+from fastapi import FastAPI
+
+from .schemas import HouseFeatures, HousePredictResponse
 
 app = FastAPI(title="House Price Prediction MLOps Service")
 
@@ -26,7 +28,7 @@ if not use_mock_model:
 
 
 @app.post("/predict",response_model = HousePredictResponse)
-def predict(house: HouseFeature):
+def predict(house: HouseFeatures):
     """房价预测接口"""
     if use_mock_model:
         pred = mock_predict(house)
